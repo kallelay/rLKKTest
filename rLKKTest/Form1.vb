@@ -1,4 +1,5 @@
 ﻿Imports System.IO
+Imports System.Text.RegularExpressions
 Imports MathNet.Numerics.Data.Matlab
 Imports MathNet.Numerics.LinearAlgebra
 Imports OxyPlot
@@ -10,7 +11,7 @@ Imports OxyPlot.WindowsForms
 Public Class Form1
     Private Sub ButtonLoad_Click(sender As Object, e As EventArgs) Handles ButtonLoad.Click
         Dim openFileDialog As New OpenFileDialog
-        openFileDialog.Filter = "All Supported Files|*.txt;*.csv;*.tsv;*.tab;*.mat|Text and CSV Files (*.txt, *.csv, *.tsv, *.tab)|*.txt;*.csv;*.tsv;*.tab| f and Z stored in MATLAB matrix (*.mat)|*.mat|All Files (*.*)|*.*"
+        openFileDialog.Filter = "All Supported Files|*.txt;*.csv;*.tsv;*.tab;*.mat;*.irf|Text and CSV Files (*.txt, *.csv, *.tsv, *.tab, *.irf)|*.txt;*.csv;*.tsv;*.tab| f and Z stored in MATLAB matrix (*.mat)|*.mat|All Files (*.*)|*.*"
 
         If openFileDialog.ShowDialog() = DialogResult.OK Then
             Filepathtext.Text = openFileDialog.FileName
@@ -77,6 +78,7 @@ Public Class Form1
 
 
         If Strings.Right(filePath, 3).ToLower = "mat" Then GoTo load_matlab
+        If Strings.Right(filePath, 3).ToLower = "irf" Then GoTo load_irf
 
         Application.DoEvents()
         '------------------- normal text file I/O section (default) -------------------------------------------'
@@ -141,7 +143,10 @@ Public Class Form1
                     If InStr(parts(0), "Frequency") > 0 Then
                         Continue For
                     End If
+                    Continue For
                 End If
+
+
 
                 Dim frequency As Double = Double.Parse(parts(0))
                 Dim realPart As Double = Double.Parse(parts(1))
@@ -165,6 +170,26 @@ load_matlab:
         frequencies.AddRange(MatrixToVector(freqs).ToArray)
         realParts.AddRange(MatrixToVector(Zall.Real).ToArray)
         imaginaryParts.AddRange(MatrixToVector(Zall.Imaginary).ToArray)
+
+        GoTo finish_loading
+
+        '------------------- IRF file I/O section (default) -------------------------------------------'
+load_irf:
+        Dim strAllXML As String = File.ReadAllText(filePath) 'load all text, once
+        Dim allTokens = Split(strAllXML, "<spectrumData freq=")
+        ' Dim pattern As String = "[-+]?\d*\.?\d+"
+        For k = 1 To allTokens.Count - 1
+
+            ' Match numbers using regex
+            '  Dim matches As MatchCollection = Regex.Matches(allTokens(k), pattern)
+            ' frequencies.Add(matches(0).Value)
+            'realParts.Add(matches(1).Value)
+            'maginaryParts.Add(matches(2).Value)
+
+            frequencies.Add(Split(allTokens(k), Chr(34))(1))
+            realParts.Add(Split(allTokens(k), Chr(34))(3))
+            imaginaryParts.Add(Split(allTokens(k), Chr(34))(5))
+        Next
 
         GoTo finish_loading
 
@@ -223,7 +248,7 @@ finish_loading:
         If filename = "" Then filename = oldFileName
         oldFileName = filename
 
-        fileinfLabel.Text = "Filename: " & Split(filename, "\").Last & Space(5) & String.Format("Npts: {0}", memoryData(0).Count)
+        fileinfLabel.Text = "Filename: " & Split(filename, "\").Last & vbCrLf & String.Format("Npts: {0}", memoryData(0).Count)
         moreinfoLabel.Text = "Freqs: " & memoryData(0).Min() & "Hz - " & memoryData(0).Max() & "Hz"
 
         rLKKparamsInfoLabel.Text = String.Format("DRT freqs: {0: 0.00e+00} Hz - {1: 0.00e+00} Hz ({2} points)" & vbCrLf & "lambda: {3:0.00e+00}", rlkk_drt_settings(0), rlkk_drt_settings(1),
@@ -304,7 +329,7 @@ finish_loading:
 
 
         Dim nyquistSeries As New LineSeries With {
-            .Title = "Measurements",
+            .Title = "Measurement",
             .MarkerType = MarkerType.Circle
         }
 
@@ -1093,5 +1118,61 @@ finish_loading:
         End If
     End Sub
 
+    Private Sub Form1_DragEnter(sender As Object, e As DragEventArgs) Handles MyBase.DragEnter
+        If e.Data.GetDataPresent(DataFormats.FileDrop) Then
+            e.Effect = DragDropEffects.Copy ' Indicates that the data can be dropped
+        End If
+    End Sub
 
+    Private Sub Form1_DragDrop(sender As Object, e As DragEventArgs) Handles MyBase.DragDrop
+        Dim files As String() = DirectCast(e.Data.GetData(DataFormats.FileDrop), String())
+        Filepathtext.Text = files(0)
+
+    End Sub
+
+    Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click
+
+        Try
+            Dim res = InputBox("Selecting deviations larger than", "Threshold selection", rLKK_Zdev.Max / 2)
+
+            If res = "" Then Exit Sub 'no input
+
+            DataGridViewImpedance.ClearSelection()
+
+            Dim rows_to_remove As New List(Of DataGridViewRow)
+            Dim rows_idx_to_remove As New List(Of Integer)
+
+            For Each row As DataGridViewRow In DataGridViewImpedance.Rows
+                ' Check if the row is not a new row and has cells
+                If Not row.IsNewRow AndAlso row.Cells.Count >= 5 Then
+                    If Math.Abs(row.Cells(5).Value) > res Then
+                        row.Selected = True
+                        rows_to_remove.Add(row)
+                        rows_idx_to_remove.Add(row.Index)
+                    End If
+                End If
+            Next
+
+            If MsgBox(String.Format("Selected {0} rows, delete?", rows_to_remove.Count), MsgBoxStyle.YesNoCancel) = MsgBoxResult.Yes Then
+                _datagridisbeingfilled = True
+                For Each row As DataGridViewRow In rows_to_remove
+                    DataGridViewImpedance.Rows.Remove(row)
+                Next
+                _datagridisbeingfilled = False
+
+                For i = rows_idx_to_remove.Count - 1 To 0 Step -1
+                    memoryData(0).RemoveAt(rows_idx_to_remove(i))
+                    memoryData(1).RemoveAt(rows_idx_to_remove(i))
+                    memoryData(2).RemoveAt(rows_idx_to_remove(i))
+                Next
+
+                updateNyquistandAllFromMemory()
+
+
+            End If
+        Catch ex As Exception
+            MsgBox(ex.Message, MsgBoxStyle.Critical, "Error")
+        End Try
+
+    End Sub
 End Class

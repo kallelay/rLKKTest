@@ -88,6 +88,7 @@ Partial Class Form1
         SaveFileDialog1 = New SaveFileDialog()
         OpenFileDialog2 = New OpenFileDialog()
         SaveFileDialog2 = New SaveFileDialog()
+        Button2 = New Button()
         MenuStrip1.SuspendLayout()
         Panel1.SuspendLayout()
         CType(DataGridViewImpedance, ComponentModel.ISupportInitialize).BeginInit()
@@ -109,6 +110,7 @@ Partial Class Form1
         ' 
         ' PlotViewNyquist
         ' 
+        PlotViewNyquist.AllowDrop = True
         PlotViewNyquist.BackColor = Color.White
         PlotViewNyquist.Dock = DockStyle.Fill
         PlotViewNyquist.Location = New Point(0, 0)
@@ -158,31 +160,31 @@ Partial Class Form1
         ' DataToolStripMenuItem
         ' 
         DataToolStripMenuItem.Name = "DataToolStripMenuItem"
-        DataToolStripMenuItem.Size = New Size(180, 22)
+        DataToolStripMenuItem.Size = New Size(160, 22)
         DataToolStripMenuItem.Text = "&Data"
         ' 
         ' RLKKParametersToolStripMenuItem1
         ' 
         RLKKParametersToolStripMenuItem1.Name = "RLKKParametersToolStripMenuItem1"
-        RLKKParametersToolStripMenuItem1.Size = New Size(180, 22)
+        RLKKParametersToolStripMenuItem1.Size = New Size(160, 22)
         RLKKParametersToolStripMenuItem1.Text = "rLKK parameters"
         ' 
         ' NyquistCurveToolStripMenuItem
         ' 
         NyquistCurveToolStripMenuItem.Name = "NyquistCurveToolStripMenuItem"
-        NyquistCurveToolStripMenuItem.Size = New Size(180, 22)
+        NyquistCurveToolStripMenuItem.Size = New Size(160, 22)
         NyquistCurveToolStripMenuItem.Text = "&Nyquist Curve"
         ' 
         ' DeviationsPlotToolStripMenuItem
         ' 
         DeviationsPlotToolStripMenuItem.Name = "DeviationsPlotToolStripMenuItem"
-        DeviationsPlotToolStripMenuItem.Size = New Size(180, 22)
+        DeviationsPlotToolStripMenuItem.Size = New Size(160, 22)
         DeviationsPlotToolStripMenuItem.Text = "Deviations plot"
         ' 
         ' RLKKPlotToolStripMenuItem
         ' 
         RLKKPlotToolStripMenuItem.Name = "RLKKPlotToolStripMenuItem"
-        RLKKPlotToolStripMenuItem.Size = New Size(180, 22)
+        RLKKPlotToolStripMenuItem.Size = New Size(160, 22)
         RLKKPlotToolStripMenuItem.Text = "rLKK plot"
         ' 
         ' AboutToolStripMenuItem
@@ -219,6 +221,7 @@ Partial Class Form1
         ' 
         ' Panel1
         ' 
+        Panel1.Controls.Add(Button2)
         Panel1.Controls.Add(DataGridViewImpedance)
         Panel1.Controls.Add(CheckBoxLogScale)
         Panel1.Controls.Add(CheckboxReverseNyq)
@@ -760,8 +763,19 @@ Partial Class Form1
         ' 
         OpenFileDialog2.FileName = "OpenFileDialog2"
         ' 
+        ' Button2
+        ' 
+        Button2.Anchor = AnchorStyles.Top Or AnchorStyles.Right
+        Button2.Location = New Point(52, 195)
+        Button2.Name = "Button2"
+        Button2.Size = New Size(154, 28)
+        Button2.TabIndex = 19
+        Button2.Text = "Select > threshold"
+        Button2.UseVisualStyleBackColor = True
+        ' 
         ' Form1
         ' 
+        AllowDrop = True
         AutoScaleDimensions = New SizeF(7.0F, 15.0F)
         AutoScaleMode = AutoScaleMode.Font
         BackColor = Color.AliceBlue
@@ -860,4 +874,5 @@ Partial Class Form1
     Friend WithEvents RLKKParametersToolStripMenuItem1 As ToolStripMenuItem
     Friend WithEvents OpenFileDialog2 As OpenFileDialog
     Friend WithEvents SaveFileDialog2 As SaveFileDialog
+    Friend WithEvents Button2 As Button
 End Class
