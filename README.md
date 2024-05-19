@@ -4,6 +4,7 @@
 # Regularized Linear Kramers-Kronig
 
 Version 1.0.0
+[![.NET Core Desktop](https://github.com/kallelay/rLKKTest/actions/workflows/dotnet-desktop.yml/badge.svg)](https://github.com/kallelay/rLKKTest/actions/workflows/dotnet-desktop.yml)
 
 ## Introduction to rLKK
 Regularized Linear Kramers Kronig (rLKK) is a data consistency checking tool that is used to analyze and validate spectroscopic data. It is based on the Kramers-Kronig relations, which are fundamental principles in physics that relate the real and imaginary parts of a complex-valued function. 
