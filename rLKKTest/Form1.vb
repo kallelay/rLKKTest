@@ -1,5 +1,7 @@
 ﻿Imports System.IO
 Imports System.Text.RegularExpressions
+Imports System.Threading
+Imports MathNet.Numerics
 Imports MathNet.Numerics.Data.Matlab
 Imports MathNet.Numerics.LinearAlgebra
 Imports OxyPlot
@@ -9,21 +11,6 @@ Imports OxyPlot.Series
 Imports OxyPlot.WindowsForms
 
 Public Class Form1
-    Private Sub ButtonLoad_Click(sender As Object, e As EventArgs) Handles ButtonLoad.Click
-        Dim openFileDialog As New OpenFileDialog
-        openFileDialog.Filter = "All Supported Files|*.txt;*.csv;*.tsv;*.tab;*.mat;*.irf|Text and CSV Files (*.txt, *.csv, *.tsv, *.tab, *.irf)|*.txt;*.csv;*.tsv;*.tab| f and Z stored in MATLAB matrix (*.mat)|*.mat|All Files (*.*)|*.*"
-
-        If openFileDialog.ShowDialog() = DialogResult.OK Then
-            Filepathtext.Text = openFileDialog.FileName
-            'Filepathtext.SelectionStart = 
-
-            Filepathtext.Select(Len(Filepathtext.Text) - 1, 0)
-
-        End If
-    End Sub
-
-
-
     Enum LoadModesEnum
         modecsv = 0
         modeagilent = 1
@@ -31,14 +18,42 @@ Public Class Form1
 
         modebin = 2
         modematlab = 3
+        modeirf = 4
+        modebattPana = 5
 
     End Enum
 
-    Dim loadMode As LoadModesEnum = LoadModesEnum.modecsv
-    Dim traceAIsDetected As Boolean = False
 
 
-    Dim memoryData As New List(Of List(Of Double))
+    Dim loadMode As LoadModesEnum = LoadModesEnum.modecsv 'Defaults to CSV 
+    Dim traceAIsDetected As Boolean = False 'Trace A and B in Agilent file
+
+
+    Dim oldFileName$ = "" 'mem file name
+    Dim memoryData As New List(Of List(Of Double)) 'memorize impedances
+
+    '----------------------------------------- init -----------------------------------------------'
+    Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+
+
+
+        Thread.CurrentThread.CurrentCulture =
+        New System.Globalization.CultureInfo("en-US")
+        Thread.CurrentThread.CurrentUICulture =
+        New System.Globalization.CultureInfo("en-US")
+
+
+        fileinfLabel.Text = ""
+        moreinfoLabel.Text = ""
+        rLKKparamsInfoLabel.Text = ""
+
+        ComboBoxRefDev.SelectedIndex = 1
+        ComboBoxWeight.SelectedIndex = 0
+
+
+
+    End Sub
+
 
     Private Sub updateStatus(status$, progressRatio!)
 
@@ -52,6 +67,8 @@ Public Class Form1
 
     '------------------------------------ internal and I/O ---------------------------------------------------'
     Private Sub LoadFile()
+
+        Dim needToReplaceCommaWithPoints As Boolean = False
 
 
         loadingscreen.Show(Me)
@@ -78,6 +95,7 @@ Public Class Form1
 
 
         If Strings.Right(filePath, 3).ToLower = "mat" Then GoTo load_matlab
+        If Strings.Right(filePath, 3).ToLower = "bin" Then GoTo load_bin
         If Strings.Right(filePath, 3).ToLower = "irf" Then GoTo load_irf
 
         Application.DoEvents()
@@ -86,6 +104,7 @@ Public Class Form1
         Dim strAll As String = File.ReadAllText(filePath) 'load all text, once
 
         If InStr(strAll, "4294A") > 0 Then loadMode = LoadModesEnum.modeagilent 'use agilent mode
+        If InStr(strAll, "Battery name") > 0 Then loadMode = LoadModesEnum.modebattPana  'use agilent mode
 
         'Most chars => guess delimiter
         Dim characterFrequencies = strAll.Where(Function(c) Not IsNumeric(c) And c <> vbCr And c <> vbLf And c <> "+" And c <> "-" And c <> "E" And c <> "e").
@@ -105,10 +124,18 @@ Public Class Form1
             valSep = characterFrequencies(0).Character
         End If
 
+        If decSep = "," Then
+            If MsgBox("The file may be made with comma as digital separator." & vbCrLf & "Is this correct?", MsgBoxStyle.YesNo, "Question") = MsgBoxResult.Yes Then
+                needToReplaceCommaWithPoints = True
+            End If
+        End If
+
 
 
         Dim lines As String() = File.ReadAllLines(filePath)
-
+        Dim frequency As Double
+        Dim realPart As Double
+        Dim imaginaryPart As Double
 
 
         Dim curLine = 0
@@ -124,6 +151,8 @@ Public Class Form1
 
             line = Trim(line)
 
+            If needToReplaceCommaWithPoints Then line = Replace(line, ",", ".")
+
 
             While line IsNot Nothing AndAlso line.IndexOf(valSep & valSep) <> -1
                 line = Replace(line, valSep & valSep, valSep)
@@ -138,24 +167,36 @@ Public Class Form1
             Dim parts As String() = line.Split(valSep)
             If parts.Length >= 3 Then
 
-                If Not IsNumeric(parts(0)) Then
-                    'TODO check decimal separator first
-                    If InStr(parts(0), "Frequency") > 0 Then
+
+                If loadMode = LoadModesEnum.modebattPana Then 'load panasonic 
+                    If Not IsNumeric(parts(13)) Then Continue For
+
+                    frequency = Double.Parse(parts(13))
+                    realPart = Double.Parse(parts(21))
+                    imaginaryPart = Double.Parse(parts(22))
+
+
+
+                Else 'normal 'load
+                    If Not IsNumeric(parts(0)) Then
+                        If InStr(parts(0), "Frequency") > 0 Then
+                            Continue For
+                        End If
                         Continue For
                     End If
-                    Continue For
+
+
+
+                    frequency = Double.Parse(parts(0))
+                    realPart = Double.Parse(parts(1))
+                    imaginaryPart = Double.Parse(parts(2))
+
                 End If
 
-
-
-                Dim frequency As Double = Double.Parse(parts(0))
-                Dim realPart As Double = Double.Parse(parts(1))
-                Dim imaginaryPart As Double = Double.Parse(parts(2))
-
                 frequencies.Add(frequency)
-                realParts.Add(realPart)
-                imaginaryParts.Add(imaginaryPart)
-            End If
+                    realParts.Add(realPart)
+                    imaginaryParts.Add(imaginaryPart)
+                End If
         Next
 
         GoTo finish_loading
@@ -170,6 +211,22 @@ load_matlab:
         frequencies.AddRange(MatrixToVector(freqs).ToArray)
         realParts.AddRange(MatrixToVector(Zall.Real).ToArray)
         imaginaryParts.AddRange(MatrixToVector(Zall.Imaginary).ToArray)
+
+        GoTo finish_loading
+        '------------------- MATLAB file I/O section (default) -------------------------------------------'
+load_bin:
+
+        Dim frequencyVector() As Double
+        Dim Zvector() As System.Numerics.Complex
+        loadeisBinfile(Filepathtext.Text, frequencyVector, Zvector)
+        Dim _tmpzvec = Vector(Of System.Numerics.Complex).Build.DenseOfArray(Zvector)
+
+        frequencies.AddRange(frequencyVector.ToArray)
+        realParts.AddRange(_tmpzvec.Real.ToArray())
+        imaginaryParts.AddRange(_tmpzvec.Imaginary.ToArray())
+        _tmpzvec = Nothing
+        Zvector = Nothing
+        frequencyVector = Nothing
 
         GoTo finish_loading
 
@@ -241,7 +298,6 @@ finish_loading:
     End Sub
 
 
-    Dim oldFileName$ = "" 'mem file name
     Private Sub UpdateInfo(Optional filename$ = "")
         If memoryData.Count = 0 Then Exit Sub
 
@@ -298,15 +354,6 @@ finish_loading:
         DataGridViewImpedance.Columns("DevRLKK").ReadOnly = True
         _datagridisbeingfilled = False
     End Sub
-    Private Function InterpolateColor(color1 As Color, color2 As Color, factor As Double) As Color
-        Dim r As Int16 = (color1.R * 1.0 + (color2.R * 1.0 - color1.R * 1.0) * factor)
-        Dim g As Int16 = (color1.G * 1.0 + (color2.G * 1.0 - color1.G * 1.0) * factor)
-        Dim b As Int16 = (color1.B * 1.0 + (color2.B * 1.0 - color1.B * 1.0) * factor)
-        r = Math.Min(Math.Max(0, r), 255)
-        b = Math.Min(Math.Max(0, b), 255)
-        g = Math.Min(Math.Max(0, g), 255)
-        Return Color.FromArgb(r, g, b)
-    End Function
 
 
 
@@ -318,6 +365,7 @@ finish_loading:
 
 
 
+    Public nyquistSeriesSelect As New ScatterSeries
     '----------------------------------- plotting --------------------------------------------'
     Private Sub PlotNyquist(realParts As List(Of Double), imaginaryParts As List(Of Double), Optional plotrLKK As Boolean = False)
         Dim nyquistPlotModel As New PlotModel With {
@@ -333,6 +381,15 @@ finish_loading:
             .MarkerType = MarkerType.Circle
         }
 
+        nyquistSeriesSelect = New ScatterSeries With {
+            .MarkerType = MarkerType.Square,
+            .MarkerStroke = OxyColors.Purple,
+            .MarkerStrokeThickness = 2,
+            .MarkerFill = OxyColors.Transparent
+        }
+
+
+        AddHandler nyquistSeries.MouseDown, AddressOf sNyq_MouseDown
         Dim xAxis As New LinearAxis With {
             .Position = AxisPosition.Bottom,
             .Title = "Real Part",
@@ -379,6 +436,7 @@ finish_loading:
 
         End If
 
+        nyquistPlotModel.Series.Add(nyquistSeriesSelect)
 
 
 
@@ -391,7 +449,55 @@ finish_loading:
 
 
     End Sub
+    Sub sDev_MouseDown(sender As Object, e As OxyMouseDownEventArgs)
+        Dim series = PlotViewDev.Model.GetSeriesFromPoint(e.Position)
+        If series Is Nothing Then Return
 
+        Dim nearestPoint = series.GetNearestPoint(e.Position, False)
+        If nearestPoint Is Nothing Then Return
+
+        DataGridViewImpedance.ClearSelection()
+        DataGridViewImpedance.Rows(nearestPoint.Index).Selected = True
+        DataGridViewImpedance.Select()
+
+        Dim dataPoint = nearestPoint.DataPoint
+        'Dim scatterPoint = series.
+        'FirstOrDefault(Function(x) x.X.Equals(dataPoint.X) AndAlso x.Y.Equals(dataPoint.Y))
+
+    End Sub
+
+    Sub sBode_MouseDown(sender As Object, e As OxyMouseDownEventArgs)
+        Dim series = PlotViewBodeMag.ActualModel.GetSeriesFromPoint(e.Position)
+        If series Is Nothing Then Return
+
+        Dim nearestPoint = series.GetNearestPoint(e.Position, False)
+        If nearestPoint Is Nothing Then Return
+
+        DataGridViewImpedance.ClearSelection()
+        DataGridViewImpedance.Rows(nearestPoint.Index).Selected = True
+        DataGridViewImpedance.Select()
+
+        Dim dataPoint = nearestPoint.DataPoint
+        'Dim scatterPoint = series.
+        'FirstOrDefault(Function(x) x.X.Equals(dataPoint.X) AndAlso x.Y.Equals(dataPoint.Y))
+
+    End Sub
+    Sub sNyq_MouseDown(sender As Object, e As OxyMouseDownEventArgs)
+        Dim series = PlotViewNyquist.ActualModel.GetSeriesFromPoint(e.Position)
+        If series Is Nothing Then Return
+
+        Dim nearestPoint = series.GetNearestPoint(e.Position, False)
+        If nearestPoint Is Nothing Then Return
+
+        DataGridViewImpedance.ClearSelection()
+        DataGridViewImpedance.Rows(nearestPoint.Index).Selected = True
+        DataGridViewImpedance.Select()
+
+        Dim dataPoint = nearestPoint.DataPoint
+        'Dim scatterPoint = series.
+        'FirstOrDefault(Function(x) x.X.Equals(dataPoint.X) AndAlso x.Y.Equals(dataPoint.Y))
+
+    End Sub
     Private Sub PlotBode(frequencies As List(Of Double), realParts As List(Of Double), imaginaryParts As List(Of Double), Optional plotrLKK As Boolean = False)
 
         Dim magnitudeSeries As New LineSeries With {
@@ -431,6 +537,8 @@ finish_loading:
         bodePlotMagModel.Series.Add(magnitudeSeries)
         bodePlotPhModel.Series.Add(phaseSeries)
 
+        AddHandler bodePlotMagModel.MouseDown, AddressOf sBode_MouseDown
+        AddHandler bodePlotPhModel.MouseDown, AddressOf sBode_MouseDown
 
 
 
@@ -542,7 +650,7 @@ finish_loading:
 
 
 
-
+    Dim devSeriesSelect = New ScatterSeries
     Private Sub PlotDeviationFromMemory()
         If memoryData Is Nothing OrElse memoryData.Count = 0 OrElse memoryData(1).Count = 0 Then Exit Sub
 
@@ -577,6 +685,14 @@ finish_loading:
         }
 
 
+        devSeriesSelect = New ScatterSeries With {
+            .MarkerType = MarkerType.Square,
+            .MarkerStroke = OxyColors.Purple,
+            .MarkerStrokeThickness = 2,
+            .MarkerFill = OxyColors.Transparent
+        }
+
+        AddHandler magnitudeSeries.MouseDown, AddressOf sDev_MouseDown
 
 
         Dim frequency, realPart, imaginaryPart, magPart As Double
@@ -623,6 +739,11 @@ finish_loading:
             magnitudeSeries.Points.Add(New ScatterPoint(frequency, magPart))
 
 
+
+            ' AddHandler realSeries.MouseDown, AddressOf sDev_MouseDown
+            ' AddHandler imagSeries.MouseDown, AddressOf sDev_MouseDown
+
+
             If RadioButtonPercent.Checked Then
                 threshold1Series.Points.Add(New DataPoint(frequency, 1 * If(CheckBox2perth.Checked, 2, 1)))
                 threshold2Series.Points.Add(New DataPoint(frequency, -1 * If(CheckBox2perth.Checked, 2, 1)))
@@ -642,9 +763,10 @@ finish_loading:
             .Title = "Deviation"
         }
 
-        If CheckBoxDevMag.Checked Then devPlotModel.Series.Add(magnitudeSeries)
         If CheckBoxDevReal.Checked Then devPlotModel.Series.Add(realSeries)
         If CheckBoxDevImg.Checked Then devPlotModel.Series.Add(imagSeries)
+        If CheckBoxDevMag.Checked Then devPlotModel.Series.Add(magnitudeSeries)
+        If CheckBoxDevMag.Checked Then devPlotModel.Series.Add(devSeriesSelect)
 
         If CheckBox1perth.Checked Or CheckBox2perth.Checked Then devPlotModel.Series.Add(threshold1Series) : devPlotModel.Series.Add(threshold2Series)
 
@@ -763,41 +885,38 @@ finish_loading:
 
 
         PopulateDataGridView(memoryData(0), memoryData(1), memoryData(2), rLKK_Z.ToArray(), rLKK_Zdev.ToArray)
+        UpdateInfo()
 
     End Sub
 
-    'TODO: binary files
-    'TODO: decimal separator (,)
 
-    'TODO: drag & drop
-
-    Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-        fileinfLabel.Text = ""
-        moreinfoLabel.Text = ""
-        rLKKparamsInfoLabel.Text = ""
-
-        ComboBoxRefDev.SelectedIndex = 1
-        ComboBoxWeight.SelectedIndex = 0
-    End Sub
-
-    Private Sub ToolStripMenuItem1_Click(sender As Object, e As EventArgs) Handles ToolStripMenuItem1.Click
-
-    End Sub
 
 
 
     '------------------------------------ user interaction on controls ----------------------------------------------'
+
     Private Sub Filepathtext_TextChanged(sender As Object, e As EventArgs) Handles Filepathtext.TextChanged
 
         'Check file, if exist => green => load
         If IO.File.Exists(Filepathtext.Text) Then
             Filepathtext.BackColor = Color.Honeydew
-            LoadFile()
+            Try : LoadFile() : Catch ex As Exception : MsgBox(ex.Message) : loadingscreen.Hide() : End Try
         Else
             Filepathtext.BackColor = Color.PaleVioletRed
         End If
     End Sub
+    Private Sub ButtonLoad_Click(sender As Object, e As EventArgs) Handles ButtonLoad.Click
+        Dim openFileDialog As New OpenFileDialog
+        openFileDialog.Filter = "All Supported Files|*.txt;*.csv;*.tsv;*.tab;*.mat;*.irf;*.bin|Text and CSV Files (*.txt, *.csv, *.tsv, *.tab, *.irf)|*.txt;*.csv;*.tsv;*.tab| f and Z stored in MATLAB matrix (*.mat)|*.mat|All Files (*.*)|*.*"
 
+        If openFileDialog.ShowDialog() = DialogResult.OK Then
+            Filepathtext.Text = openFileDialog.FileName
+            'Filepathtext.SelectionStart = 
+
+            Filepathtext.Select(Len(Filepathtext.Text) - 1, 0)
+
+        End If
+    End Sub
     Private Sub reverseNyqChecked_CheckedChanged(sender As Object, e As EventArgs) Handles CheckboxReverseNyq.CheckedChanged ', CheckBoxPlotrLKK.CheckedChanged
         If memoryData Is Nothing OrElse memoryData.Count = 0 Then Exit Sub 'no memory data (no file is loaded)
         PlotNyquist(memoryData(1), memoryData(2), CheckBoxPlotrLKK.Checked) 'Update Nyquist plot
@@ -806,10 +925,6 @@ finish_loading:
         If memoryData Is Nothing OrElse memoryData.Count = 0 Then Exit Sub 'no memory data (no file is loaded)
         PlotNyquist(memoryData(1), memoryData(2), CheckBoxPlotrLKK.Checked) 'Update Nyquist plot
         PlotBode(memoryData(0), memoryData(1), memoryData(2), CheckBoxPlotrLKK.Checked) 'update bode
-    End Sub
-
-    Private Sub DataGridViewImpedance_CellContentClick(sender As Object, e As DataGridViewCellEventArgs) Handles DataGridViewImpedance.CellContentClick
-
     End Sub
 
     Private Sub DataGridViewImpedance_CellEndEdit(sender As Object, e As DataGridViewCellEventArgs) Handles DataGridViewImpedance.CellEndEdit
@@ -839,8 +954,6 @@ finish_loading:
 
     End Sub
 
-    'TODO: multicursor
-
     Dim rlkk_drt_settings(3) As Double 'fmin, fmax, 
     Private Sub rLKKSettChanged_TextChanged(sender As Object, e As EventArgs) Handles fminTextBox.TextChanged, fmaxTextBox.TextChanged, nDRTTextBox.TextChanged, lambdaTextBox.TextChanged,
         ComboBoxWeight.SelectedIndexChanged, CheckBoxR0.CheckedChanged, CheckBoxRinf.CheckedChanged
@@ -866,10 +979,6 @@ finish_loading:
             sender.backColor = Color.PaleVioletRed
             Beep()
         End If
-    End Sub
-
-    Private Sub Label3_Click(sender As Object, e As EventArgs) Handles Label3.Click
-
     End Sub
 
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
@@ -929,10 +1038,6 @@ finish_loading:
         MsgBox("Regularized Linear Kramers Kronig" & vbCrLf & "Version: " & Application.ProductVersion & vbCrLf & "Author: Ahmed Yahia Kallel", MsgBoxStyle.Information, "About")
     End Sub
 
-    Private Sub TabPage4_Click(sender As Object, e As EventArgs) Handles TabPage4.Click
-
-    End Sub
-
 
     Dim prevSelIdx = 0
     Private Sub TabControl1_SelectedIndexChanged(sender As Object, e As EventArgs) Handles TabControl1.SelectedIndexChanged
@@ -964,93 +1069,7 @@ finish_loading:
 
     End Sub
 
-    Private Sub ExportDataGridViewToTextFile(dataGridView As DataGridView, filePath As String)
 
-        Dim sep = CStr("1.23")(1)
-        'If sep = "." Then sep = "," Else sep = ";"
-        sep = ";"
-        Try
-            Using writer As New StreamWriter(filePath)
-                ' Write the headers
-                For i As Integer = 0 To dataGridView.Columns.Count - 1
-                    writer.Write(dataGridView.Columns(i).HeaderText)
-                    If i < dataGridView.Columns.Count - 1 Then
-                        writer.Write(sep)
-                        ' writer.Write(vbTab)
-                    End If
-                Next
-                writer.WriteLine()
-
-                ' Write the data rows
-                For Each row As DataGridViewRow In dataGridView.Rows
-                    If Not row.IsNewRow Then
-                        For i As Integer = 0 To dataGridView.Columns.Count - 1
-                            writer.Write(row.Cells(i).Value.ToString())
-                            If i < dataGridView.Columns.Count - 1 Then
-                                '        writer.Write(",")
-                                writer.Write(sep)
-                            End If
-                        Next
-                        writer.WriteLine()
-                    End If
-                Next
-            End Using
-        Catch ex As Exception
-            MsgBox(ex.Message, MsgBoxStyle.Exclamation, "Error")
-        End Try
-    End Sub
-
-    Private Sub SavePlotAsSvg(plotModel As PlotModel, filePath As String)
-        ' Define the width and height for the SVG
-        Dim width As Double = plotModel.Width
-        Dim height As Double = plotModel.Height
-
-        ' Create an SVG exporter
-        Dim exporter As New OxyPlot.SvgExporter With {
-            .Width = width,
-            .Height = height
-        }
-
-        ' Export the plot to an SVG file
-        Using stream As New IO.FileStream(filePath, IO.FileMode.Create)
-            exporter.Export(plotModel, stream)
-        End Using
-
-    End Sub
-    Private Sub SavePlotAsPdf(plotModel As PlotModel, filePath As String)
-        ' Define the width and height for the pdf
-        Dim width As Double = plotModel.Width * 0.75
-        Dim height As Double = plotModel.Height * 0.75
-
-        ' Create a PNG exporter
-        Dim exporter As New PdfExporter With {
-            .Width = width,
-            .Height = height
-        }
-
-        ' Export the plot to a PNG file
-        Using stream As New IO.FileStream(filePath, IO.FileMode.Create)
-            exporter.Export(plotModel, stream)
-        End Using
-
-    End Sub
-    Private Sub SavePlotAsPng(plotModel As PlotModel, filePath As String)
-        ' Define the width and height for the PNG
-        Dim width As Double = plotModel.Width
-        Dim height As Double = plotModel.Height
-
-        ' Create a PNG exporter
-        Dim exporter As New PngExporter With {
-            .Width = width,
-            .Height = height
-        }
-
-        ' Export the plot to a PNG file
-        Using stream As New IO.FileStream(filePath, IO.FileMode.Create)
-            exporter.Export(plotModel, stream)
-        End Using
-
-    End Sub
 
     Sub savePlotModelAsImg(PlotViewi As PlotView)
         SaveFileDialog1.Filter = " PNG |*.png| PDF|*.pdf|SVG |*.svg"
@@ -1174,5 +1193,23 @@ finish_loading:
             MsgBox(ex.Message, MsgBoxStyle.Critical, "Error")
         End Try
 
+    End Sub
+
+    Private Sub DataGridViewImpedance_CellContentClick(sender As Object, e As DataGridViewCellEventArgs) Handles DataGridViewImpedance.CellContentClick
+
+    End Sub
+
+    Private Sub DataGridViewImpedance_SelectionChanged(sender As Object, e As EventArgs) Handles DataGridViewImpedance.SelectionChanged
+        nyquistSeriesSelect.Points.Clear()
+        devSeriesSelect.points.clear()
+        For Each sel As DataGridViewRow In DataGridViewImpedance.SelectedRows()
+
+            nyquistSeriesSelect.Points.Add(New ScatterPoint(memoryData(1)(sel.Index), memoryData(2)(sel.Index)))
+            devSeriesSelect.Points.Add(New ScatterPoint(memoryData(0)(sel.Index), rLKK_Zdev(sel.Index)))
+
+
+        Next
+        PlotViewNyquist.InvalidatePlot(True)
+        PlotViewDev.InvalidatePlot(True)
     End Sub
 End Class

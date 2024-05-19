@@ -40,6 +40,7 @@ Partial Class Form1
         ButtonLoad = New Button()
         OpenFileDialog1 = New OpenFileDialog()
         Panel1 = New Panel()
+        Button2 = New Button()
         DataGridViewImpedance = New DataGridView()
         CheckBoxLogScale = New CheckBox()
         CheckboxReverseNyq = New CheckBox()
@@ -88,7 +89,6 @@ Partial Class Form1
         SaveFileDialog1 = New SaveFileDialog()
         OpenFileDialog2 = New OpenFileDialog()
         SaveFileDialog2 = New SaveFileDialog()
-        Button2 = New Button()
         MenuStrip1.SuspendLayout()
         Panel1.SuspendLayout()
         CType(DataGridViewImpedance, ComponentModel.ISupportInitialize).BeginInit()
@@ -238,6 +238,16 @@ Partial Class Form1
         Panel1.Size = New Size(378, 442)
         Panel1.TabIndex = 4
         ' 
+        ' Button2
+        ' 
+        Button2.Anchor = AnchorStyles.Top Or AnchorStyles.Right
+        Button2.Location = New Point(52, 195)
+        Button2.Name = "Button2"
+        Button2.Size = New Size(154, 28)
+        Button2.TabIndex = 19
+        Button2.Text = "Select > threshold"
+        Button2.UseVisualStyleBackColor = True
+        ' 
         ' DataGridViewImpedance
         ' 
         DataGridViewImpedance.AllowUserToAddRows = False
@@ -333,8 +343,6 @@ Partial Class Form1
         ' 
         CheckBoxRinf.Anchor = AnchorStyles.Top Or AnchorStyles.Right
         CheckBoxRinf.AutoSize = True
-        CheckBoxRinf.Checked = True
-        CheckBoxRinf.CheckState = CheckState.Checked
         CheckBoxRinf.Location = New Point(289, 78)
         CheckBoxRinf.Name = "CheckBoxRinf"
         CheckBoxRinf.Size = New Size(52, 19)
@@ -346,8 +354,6 @@ Partial Class Form1
         ' 
         CheckBoxR0.Anchor = AnchorStyles.Top Or AnchorStyles.Right
         CheckBoxR0.AutoSize = True
-        CheckBoxR0.Checked = True
-        CheckBoxR0.CheckState = CheckState.Checked
         CheckBoxR0.Location = New Point(234, 78)
         CheckBoxR0.Name = "CheckBoxR0"
         CheckBoxR0.Size = New Size(44, 19)
@@ -410,7 +416,7 @@ Partial Class Form1
         lambdaTextBox.Name = "lambdaTextBox"
         lambdaTextBox.Size = New Size(92, 23)
         lambdaTextBox.TabIndex = 14
-        lambdaTextBox.Text = "1e10"
+        lambdaTextBox.Text = "1e-3"
         ' 
         ' nDRTTextBox
         ' 
@@ -419,7 +425,7 @@ Partial Class Form1
         nDRTTextBox.Name = "nDRTTextBox"
         nDRTTextBox.Size = New Size(95, 23)
         nDRTTextBox.TabIndex = 12
-        nDRTTextBox.Text = "1000"
+        nDRTTextBox.Text = "100"
         ' 
         ' Label2
         ' 
@@ -438,7 +444,7 @@ Partial Class Form1
         fmaxTextBox.Name = "fmaxTextBox"
         fmaxTextBox.Size = New Size(95, 23)
         fmaxTextBox.TabIndex = 10
-        fmaxTextBox.Text = "1e20"
+        fmaxTextBox.Text = "1e8"
         ' 
         ' Label1
         ' 
@@ -456,12 +462,12 @@ Partial Class Form1
         fminTextBox.Name = "fminTextBox"
         fminTextBox.Size = New Size(92, 23)
         fminTextBox.TabIndex = 8
-        fminTextBox.Text = "1e-20"
+        fminTextBox.Text = "1e-8"
         ' 
         ' Button1
         ' 
         Button1.Anchor = AnchorStyles.Top Or AnchorStyles.Right
-        Button1.Location = New Point(221, 195)
+        Button1.Location = New Point(212, 195)
         Button1.Name = "Button1"
         Button1.Size = New Size(154, 28)
         Button1.TabIndex = 17
@@ -762,16 +768,6 @@ Partial Class Form1
         ' OpenFileDialog2
         ' 
         OpenFileDialog2.FileName = "OpenFileDialog2"
-        ' 
-        ' Button2
-        ' 
-        Button2.Anchor = AnchorStyles.Top Or AnchorStyles.Right
-        Button2.Location = New Point(52, 195)
-        Button2.Name = "Button2"
-        Button2.Size = New Size(154, 28)
-        Button2.TabIndex = 19
-        Button2.Text = "Select > threshold"
-        Button2.UseVisualStyleBackColor = True
         ' 
         ' Form1
         ' 
