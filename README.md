@@ -69,7 +69,7 @@ The exported file will contain 6 columns. Please use the first, fourth, and fift
 
 
 ### Configuring rLKK: Lenient rLKK
-For a linient rLKK, make sure that "fmin" (DRT frequency) is smaller than the minimum measurement frequency, and that "fmax" is larger than the maximum frequency. Allow one to two decades (For example if measurements are between 1 Hz (1e0) and 100 Hz (1e2), DRT can be 1e-1 to 1e3)
+For a lenient rLKK, make sure that "fmin" (DRT frequency) is smaller than the minimum measurement frequency, and that "fmax" is larger than the maximum frequency. Allow one to two decades (For example if measurements are between 1 Hz (1e0) and 100 Hz (1e2), DRT can be 1e-1 to 1e3)
 The number of points should not exceed 20 freq/dec (remember: 1 Hz to 100 Hz are two decades because 1e0 -> 1e1 is one decade and 1e1 -> 1e2 is the second decade, 20 freq/dec means maximum number of points is 20*2=40)
 R_0 should be enabled.
 Lambda should be 1e-7 to 1e-1 (0.1). Visually, rLKK reconstruction in Nyquist (and Bode) should not follow distortions, a higher lambda can be used to enable this. 
