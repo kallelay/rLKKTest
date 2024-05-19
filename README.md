@@ -77,6 +77,7 @@ You can zoom in Nyquist plot (Use a mouse with a wheel, use the wheel) to ensure
 
 
 **The lenient mode is recommended for measurement with small deviations that do not hinder the overall behavior of the system**
+
 Note: You can automatically use the "green" button next to rLKK parameters to auto-fill with starting lenient parameters
 ![alt text](img/image.png)
 
@@ -89,7 +90,7 @@ Aggressive rLKK follows the original rLKK algorithm. By using a large fmin and f
 
 **Agressive rLKK is recommended in the case of high noise or deviations, in this case, the number of DRT frequency pts should be adequately chosen to allow a just/good approximation**
 
-Note: You can automatically use the "red" button next to rLKK parameters to auto-fill with starting lenient parameters
+Note: You can automatically use the "red" button next to rLKK parameters to auto-fill with starting aggressive parameters
 ![alt text](img/image.png)
 
 ## Working with plots:
