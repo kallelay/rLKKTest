@@ -114,7 +114,7 @@ In the plot, you can use
 * middle mouse click (click on the screen mouse): to select a region and zoom it
 * Double click on the middle (wheel) button resets the view
 * Mouse with 4 and 5 buttons: the 4 and 5th buttons allow for gradual zoom in and out
-* 
+  
 ![alt text](img/image-18.png)
 
 It is possible to export the plots as png, pdf, or svg (svg is recommended).
