@@ -1236,4 +1236,32 @@ finish_loading:
         PlotViewDev.InvalidatePlot(True)
     End Sub
 
+
+    'Lenient 
+    Private Sub Button4_Click(sender As Object, e As EventArgs) Handles Button4.Click
+
+        Dim _fmin = Math.Floor(Math.Log10(memoryData(0).Min)) - 1
+        Dim _fmax = Math.Ceiling(Math.Log10(memoryData(0).Max)) + 1
+        fminTextBox.Text = "1e" & _fmin
+        fmaxTextBox.Text = "1e" & _fmax
+        nDRTTextBox.Text = 6 * (_fmax - _fmin)
+        lambdaTextBox.Text = 0.001
+        ComboBoxWeight.SelectedIndex = 0
+        CheckBoxR0.Checked = True
+        CheckBoxRinf.Checked = True
+
+
+    End Sub
+
+    'Aggressive
+    Private Sub Button3_Click(sender As Object, e As EventArgs) Handles Button3.Click
+        fminTextBox.Text = "1e-8"
+        fmaxTextBox.Text = "1e+8"
+        nDRTTextBox.Text = 1000
+        lambdaTextBox.Text = "1e10"
+        ComboBoxWeight.SelectedIndex = 0
+        CheckBoxR0.Checked = False
+        CheckBoxRinf.Checked = False
+
+    End Sub
 End Class

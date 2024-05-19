@@ -75,7 +75,10 @@ Make sure that both R_0 and R_inf are checked.
 You can zoom in Nyquist plot (Use a mouse with a wheel, use the wheel) to ensure that that lambda can visually provide a good consistency:
 ![alt text](img/image-17.png)
 
+
 **The lenient mode is recommended for measurement with small deviations that do not hinder the overall behavior of the system**
+Note: You can automatically use the "green" button next to rLKK parameters to auto-fill with starting lenient parameters
+![alt text](img/image.png)
 
 ### Configuring rLKK: Aggressive rLKK
 Aggressive rLKK follows the original rLKK algorithm. By using a large fmin and fmax, possibility 1e-8 to 1e8 or 1e-20 to 1e20 (or 1e-8 to 1e20),  a large DRT frequency points, such as 1000, and a large lambda (10 to 1e8), the ideal behavior of the measurement from extremely distorted data can be extracted. R_0 and R_inf do not need to be enabled.
@@ -86,7 +89,8 @@ Aggressive rLKK follows the original rLKK algorithm. By using a large fmin and f
 
 **Agressive rLKK is recommended in the case of high noise or deviations, in this case, the number of DRT frequency pts should be adequately chosen to allow a just/good approximation**
 
-
+Note: You can automatically use the "red" button next to rLKK parameters to auto-fill with starting lenient parameters
+![alt text](img/image.png)
 
 ## Working with plots:
 Plots allows a fast visualization of the data. Nyquist plot, Bode plot, and deviations plots are connected. If you select a point in Nyquist or Bode plots, it'll also be selected in the other plot, as well as the row. 

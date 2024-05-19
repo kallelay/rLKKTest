@@ -48,6 +48,7 @@ Partial Class Form1
         Filepathtext = New TextBox()
         CheckBoxPlotrLKK = New CheckBox()
         GroupBox1 = New GroupBox()
+        Button4 = New Button()
         CheckBoxRinf = New CheckBox()
         CheckBoxR0 = New CheckBox()
         Label5 = New Label()
@@ -56,6 +57,7 @@ Partial Class Form1
         rLKKparamsInfoLabel = New Label()
         Label4 = New Label()
         lambdaTextBox = New TextBox()
+        Button3 = New Button()
         nDRTTextBox = New TextBox()
         Label2 = New Label()
         fmaxTextBox = New TextBox()
@@ -320,6 +322,7 @@ Partial Class Form1
         ' GroupBox1
         ' 
         GroupBox1.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
+        GroupBox1.Controls.Add(Button4)
         GroupBox1.Controls.Add(CheckBoxRinf)
         GroupBox1.Controls.Add(CheckBoxR0)
         GroupBox1.Controls.Add(Label5)
@@ -328,6 +331,7 @@ Partial Class Form1
         GroupBox1.Controls.Add(rLKKparamsInfoLabel)
         GroupBox1.Controls.Add(Label4)
         GroupBox1.Controls.Add(lambdaTextBox)
+        GroupBox1.Controls.Add(Button3)
         GroupBox1.Controls.Add(nDRTTextBox)
         GroupBox1.Controls.Add(Label2)
         GroupBox1.Controls.Add(fmaxTextBox)
@@ -339,6 +343,20 @@ Partial Class Form1
         GroupBox1.TabIndex = 16
         GroupBox1.TabStop = False
         GroupBox1.Text = "rLKK parameters"
+        ' 
+        ' Button4
+        ' 
+        Button4.Anchor = AnchorStyles.Top Or AnchorStyles.Right
+        Button4.AutoEllipsis = True
+        Button4.BackColor = Color.SeaGreen
+        Button4.FlatStyle = FlatStyle.Flat
+        Button4.Font = New Font("Script MT Bold", 6.0F, FontStyle.Bold, GraphicsUnit.Point)
+        Button4.Location = New Point(102, 0)
+        Button4.Name = "Button4"
+        Button4.Size = New Size(10, 10)
+        Button4.TabIndex = 21
+        Button4.Text = "--"
+        Button4.UseVisualStyleBackColor = False
         ' 
         ' CheckBoxRinf
         ' 
@@ -418,6 +436,20 @@ Partial Class Form1
         lambdaTextBox.Size = New Size(92, 23)
         lambdaTextBox.TabIndex = 14
         lambdaTextBox.Text = "1e-3"
+        ' 
+        ' Button3
+        ' 
+        Button3.Anchor = AnchorStyles.Top Or AnchorStyles.Right
+        Button3.AutoEllipsis = True
+        Button3.BackColor = Color.Tomato
+        Button3.FlatStyle = FlatStyle.Flat
+        Button3.Font = New Font("Script MT Bold", 6.0F, FontStyle.Bold, GraphicsUnit.Point)
+        Button3.Location = New Point(118, 0)
+        Button3.Name = "Button3"
+        Button3.Size = New Size(10, 10)
+        Button3.TabIndex = 17
+        Button3.Text = "--"
+        Button3.UseVisualStyleBackColor = False
         ' 
         ' nDRTTextBox
         ' 
@@ -873,4 +905,6 @@ Partial Class Form1
     Friend WithEvents OpenFileDialog2 As OpenFileDialog
     Friend WithEvents SaveFileDialog2 As SaveFileDialog
     Friend WithEvents Button2 As Button
+    Friend WithEvents Button4 As Button
+    Friend WithEvents Button3 As Button
 End Class
