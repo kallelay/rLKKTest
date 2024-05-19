@@ -11,6 +11,8 @@ Imports OxyPlot.Series
 Imports OxyPlot.WindowsForms
 
 Public Class Form1
+
+    'Loading modes (enum)
     Enum LoadModesEnum
         modecsv = 0
         modeagilent = 1
@@ -36,13 +38,14 @@ Public Class Form1
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
 
 
-
+        'Make sure that sep is point 
         Thread.CurrentThread.CurrentCulture =
         New System.Globalization.CultureInfo("en-US")
         Thread.CurrentThread.CurrentUICulture =
         New System.Globalization.CultureInfo("en-US")
 
 
+        'initialize labels and combobox
         fileinfLabel.Text = ""
         moreinfoLabel.Text = ""
         rLKKparamsInfoLabel.Text = ""
@@ -54,7 +57,7 @@ Public Class Form1
 
     End Sub
 
-
+    'Update status (loading progress), sent as a status$ and ratio number out of 7
     Private Sub updateStatus(status$, progressRatio!)
 
         progressRatio! /= 7
@@ -71,9 +74,9 @@ Public Class Form1
         Dim needToReplaceCommaWithPoints As Boolean = False
 
 
+        'Show loading screen
         loadingscreen.Show(Me)
         loadingscreen.Location = Me.Location + New Point(Me.Width / 2 - loadingscreen.Width / 2, Me.Height / 2 - loadingscreen.Height / 2)
-
         updateStatus("Starting", 0)
         Application.DoEvents()
 
@@ -84,16 +87,17 @@ Public Class Form1
 
 
 
+        'Status: loading
         updateStatus("Loading File", 1)
 
 
         loadMode = LoadModesEnum.modecsv 'expecting csv or tsv by default
-
         traceAIsDetected = False 'reset detected trace A for agilent mode
+
 
         Dim filePath = Filepathtext.Text 'get filepath from text file (done it this way for later expansions)
 
-
+        'Detect file type from extension
         If Strings.Right(filePath, 3).ToLower = "mat" Then GoTo load_matlab
         If Strings.Right(filePath, 3).ToLower = "bin" Then GoTo load_bin
         If Strings.Right(filePath, 3).ToLower = "irf" Then GoTo load_irf
@@ -103,6 +107,8 @@ Public Class Form1
 
         Dim strAll As String = File.ReadAllText(filePath) 'load all text, once
 
+
+        'Further detect file type
         If InStr(strAll, "4294A") > 0 Then loadMode = LoadModesEnum.modeagilent 'use agilent mode
         If InStr(strAll, "Battery name") > 0 Then loadMode = LoadModesEnum.modebattPana  'use agilent mode
 
@@ -124,6 +130,8 @@ Public Class Form1
             valSep = characterFrequencies(0).Character
         End If
 
+
+        'Bad delimiter in the loaded csv/txt file
         If decSep = "," Then
             If MsgBox("The file may be made with comma as digital separator." & vbCrLf & "Is this correct?", MsgBoxStyle.YesNo, "Question") = MsgBoxResult.Yes Then
                 needToReplaceCommaWithPoints = True
@@ -131,44 +139,51 @@ Public Class Form1
         End If
 
 
-
+        'Load lines
         Dim lines As String() = File.ReadAllLines(filePath)
+
+        'temp variables for reading from file
         Dim frequency As Double
         Dim realPart As Double
         Dim imaginaryPart As Double
 
 
-        Dim curLine = 0
-        Dim steps = Int(lines.Count / 10)
+        Dim curLine = 0 'cursor for lines
+        Dim steps = Int(lines.Count / 10) 'loading file is 10 steps
+
         For Each line As String In lines
             curLine += 1
 
-            'progress
+            'update progress form
             If curLine Mod steps = 0 Then
                 updateStatus(String.Format("Loading File ({0:0.0} %)", curLine / steps * 100), 1)
             End If
 
 
+            'trim line
             line = Trim(line)
 
+            'make sure that numbers are correctly formatted if user allows it
             If needToReplaceCommaWithPoints Then line = Replace(line, ",", ".")
 
 
+            'Ensure that no excess delimited (e.g., space) is present
             While line IsNot Nothing AndAlso line.IndexOf(valSep & valSep) <> -1
                 line = Replace(line, valSep & valSep, valSep)
             End While
 
+            'Early retreat
+            If InStr(line, """TRACE: A""") > 0 Then traceAIsDetected = True 'Trace A only in Agilent
+            If line Is Nothing Then Continue For 'if nothing in the line, continue
+            If traceAIsDetected And InStr(line, """TRACE: B""") > 0 Then Exit For 'exit if trace b is detected
 
-            If InStr(line, """TRACE: A""") > 0 Then traceAIsDetected = True
-            If line Is Nothing Then Continue For
-            If traceAIsDetected And InStr(line, """TRACE: B""") > 0 Then Exit For 'exit if trace b
 
-
+            'We'll use classical way (instead of Regex) to separate TSV/CSV 
             Dim parts As String() = line.Split(valSep)
             If parts.Length >= 3 Then
 
 
-                If loadMode = LoadModesEnum.modebattPana Then 'load panasonic 
+                If loadMode = LoadModesEnum.modebattPana Then 'Is it from Kollmeyer panasonic file? => map to 13, 21, and 22 'HACK
                     If Not IsNumeric(parts(13)) Then Continue For
 
                     frequency = Double.Parse(parts(13))
@@ -177,7 +192,7 @@ Public Class Form1
 
 
 
-                Else 'normal 'load
+                Else 'normal load
                     If Not IsNumeric(parts(0)) Then
                         If InStr(parts(0), "Frequency") > 0 Then
                             Continue For
@@ -194,9 +209,9 @@ Public Class Form1
                 End If
 
                 frequencies.Add(frequency)
-                    realParts.Add(realPart)
-                    imaginaryParts.Add(imaginaryPart)
-                End If
+                realParts.Add(realPart)
+                imaginaryParts.Add(imaginaryPart)
+            End If
         Next
 
         GoTo finish_loading
@@ -204,18 +219,20 @@ Public Class Form1
         '------------------- MATLAB file I/O section (default) -------------------------------------------'
 load_matlab:
 
-
+        'Load f and Z from mat file
         Dim freqs = MatlabReader.Read(Of Double)(Filepathtext.Text, "f")
         Dim Zall = MatlabReader.Read(Of System.Numerics.Complex)(Filepathtext.Text, "Z")
 
+        'Faster load...
         frequencies.AddRange(MatrixToVector(freqs).ToArray)
         realParts.AddRange(MatrixToVector(Zall.Real).ToArray)
         imaginaryParts.AddRange(MatrixToVector(Zall.Imaginary).ToArray)
 
         GoTo finish_loading
-        '------------------- MATLAB file I/O section (default) -------------------------------------------'
+        '------------------- Battery MST I/O section  -------------------------------------------'
 load_bin:
 
+        'Same, use the "messy" loadeisbin file from GUIISAY project 
         Dim frequencyVector() As Double
         Dim Zvector() As System.Numerics.Complex
         loadeisBinfile(Filepathtext.Text, frequencyVector, Zvector)
@@ -230,7 +247,8 @@ load_bin:
 
         GoTo finish_loading
 
-        '------------------- IRF file I/O section (default) -------------------------------------------'
+        '------------------- IRF file I/O section -------------------------------------------'
+        'For the Safion device, again the measurements are messy in most cases and is overengineered
 load_irf:
         Dim strAllXML As String = File.ReadAllText(filePath) 'load all text, once
         Dim allTokens = Split(strAllXML, "<spectrumData freq=")
@@ -277,7 +295,7 @@ finish_loading:
 
 
 
-
+        'Do plots
         updateStatus("Plotting", 4)
         PlotNyquist(realParts, imaginaryParts, CheckBoxPlotrLKK.Checked)
         PlotBode(frequencies, realParts, imaginaryParts, CheckBoxPlotrLKK.Checked)
@@ -297,7 +315,7 @@ finish_loading:
 
     End Sub
 
-
+    'Update info in file
     Private Sub UpdateInfo(Optional filename$ = "")
         If memoryData.Count = 0 Then Exit Sub
 
@@ -312,6 +330,7 @@ finish_loading:
 
     End Sub
 
+    'Populate Grid View
     Private Sub PopulateDataGridView(frequencies As List(Of Double), realParts As List(Of Double), imaginaryParts As List(Of Double), ZLKK As System.Numerics.Complex(), ZLKKRes As Double())
         _datagridisbeingfilled = True
         DataGridViewImpedance.Rows.Clear()
@@ -324,6 +343,9 @@ finish_loading:
         DataGridViewImpedance.Columns.Add("ImaginaryPartrLKK", "Imaginary Part (rLKK)")
         DataGridViewImpedance.Columns.Add("DevRLKK", "Deviation in %")
 
+
+        'It was supposed to be "pigment" not pickment, changeme later
+        'Highlight > 1%, saturate at 3% deviation (red)
 
         For i As Integer = 0 To frequencies.Count - 1
             DataGridViewImpedance.Rows.Add(frequencies(i), realParts(i), imaginaryParts(i), ZLKK(i).Real, ZLKK(i).Imaginary, ZLKKRes(i))
@@ -449,55 +471,7 @@ finish_loading:
 
 
     End Sub
-    Sub sDev_MouseDown(sender As Object, e As OxyMouseDownEventArgs)
-        Dim series = PlotViewDev.Model.GetSeriesFromPoint(e.Position)
-        If series Is Nothing Then Return
 
-        Dim nearestPoint = series.GetNearestPoint(e.Position, False)
-        If nearestPoint Is Nothing Then Return
-
-        DataGridViewImpedance.ClearSelection()
-        DataGridViewImpedance.Rows(nearestPoint.Index).Selected = True
-        DataGridViewImpedance.Select()
-
-        Dim dataPoint = nearestPoint.DataPoint
-        'Dim scatterPoint = series.
-        'FirstOrDefault(Function(x) x.X.Equals(dataPoint.X) AndAlso x.Y.Equals(dataPoint.Y))
-
-    End Sub
-
-    Sub sBode_MouseDown(sender As Object, e As OxyMouseDownEventArgs)
-        Dim series = PlotViewBodeMag.ActualModel.GetSeriesFromPoint(e.Position)
-        If series Is Nothing Then Return
-
-        Dim nearestPoint = series.GetNearestPoint(e.Position, False)
-        If nearestPoint Is Nothing Then Return
-
-        DataGridViewImpedance.ClearSelection()
-        DataGridViewImpedance.Rows(nearestPoint.Index).Selected = True
-        DataGridViewImpedance.Select()
-
-        Dim dataPoint = nearestPoint.DataPoint
-        'Dim scatterPoint = series.
-        'FirstOrDefault(Function(x) x.X.Equals(dataPoint.X) AndAlso x.Y.Equals(dataPoint.Y))
-
-    End Sub
-    Sub sNyq_MouseDown(sender As Object, e As OxyMouseDownEventArgs)
-        Dim series = PlotViewNyquist.ActualModel.GetSeriesFromPoint(e.Position)
-        If series Is Nothing Then Return
-
-        Dim nearestPoint = series.GetNearestPoint(e.Position, False)
-        If nearestPoint Is Nothing Then Return
-
-        DataGridViewImpedance.ClearSelection()
-        DataGridViewImpedance.Rows(nearestPoint.Index).Selected = True
-        DataGridViewImpedance.Select()
-
-        Dim dataPoint = nearestPoint.DataPoint
-        'Dim scatterPoint = series.
-        'FirstOrDefault(Function(x) x.X.Equals(dataPoint.X) AndAlso x.Y.Equals(dataPoint.Y))
-
-    End Sub
     Private Sub PlotBode(frequencies As List(Of Double), realParts As List(Of Double), imaginaryParts As List(Of Double), Optional plotrLKK As Boolean = False)
 
         Dim magnitudeSeries As New LineSeries With {
@@ -889,8 +863,56 @@ finish_loading:
 
     End Sub
 
+    '------------------ user interaction (selection) from plots -------------------------'
+    Sub sDev_MouseDown(sender As Object, e As OxyMouseDownEventArgs)
+        Dim series = PlotViewDev.Model.GetSeriesFromPoint(e.Position)
+        If series Is Nothing Then Return
 
+        Dim nearestPoint = series.GetNearestPoint(e.Position, False)
+        If nearestPoint Is Nothing Then Return
 
+        DataGridViewImpedance.ClearSelection()
+        DataGridViewImpedance.Rows(nearestPoint.Index).Selected = True
+        DataGridViewImpedance.Select()
+
+        Dim dataPoint = nearestPoint.DataPoint
+        'Dim scatterPoint = series.
+        'FirstOrDefault(Function(x) x.X.Equals(dataPoint.X) AndAlso x.Y.Equals(dataPoint.Y))
+
+    End Sub
+
+    Sub sBode_MouseDown(sender As Object, e As OxyMouseDownEventArgs)
+        Dim series = PlotViewBodeMag.ActualModel.GetSeriesFromPoint(e.Position)
+        If series Is Nothing Then Return
+
+        Dim nearestPoint = series.GetNearestPoint(e.Position, False)
+        If nearestPoint Is Nothing Then Return
+
+        DataGridViewImpedance.ClearSelection()
+        DataGridViewImpedance.Rows(nearestPoint.Index).Selected = True
+        DataGridViewImpedance.Select()
+
+        Dim dataPoint = nearestPoint.DataPoint
+        'Dim scatterPoint = series.
+        'FirstOrDefault(Function(x) x.X.Equals(dataPoint.X) AndAlso x.Y.Equals(dataPoint.Y))
+
+    End Sub
+    Sub sNyq_MouseDown(sender As Object, e As OxyMouseDownEventArgs)
+        Dim series = PlotViewNyquist.ActualModel.GetSeriesFromPoint(e.Position)
+        If series Is Nothing Then Return
+
+        Dim nearestPoint = series.GetNearestPoint(e.Position, False)
+        If nearestPoint Is Nothing Then Return
+
+        DataGridViewImpedance.ClearSelection()
+        DataGridViewImpedance.Rows(nearestPoint.Index).Selected = True
+        DataGridViewImpedance.Select()
+
+        Dim dataPoint = nearestPoint.DataPoint
+        'Dim scatterPoint = series.
+        'FirstOrDefault(Function(x) x.X.Equals(dataPoint.X) AndAlso x.Y.Equals(dataPoint.Y))
+
+    End Sub
 
 
     '------------------------------------ user interaction on controls ----------------------------------------------'
@@ -981,7 +1003,7 @@ finish_loading:
         End If
     End Sub
 
-    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click 'Invert Im button, rename changeme later
         If memoryData Is Nothing OrElse memoryData.Count = 0 OrElse memoryData(2).Count = 0 Then Exit Sub
 
         For k = 0 To memoryData(2).Count - 1
@@ -1001,11 +1023,11 @@ finish_loading:
     End Sub
 
     Private Sub CheckBox2perth_CheckedChanged(sender As Object, e As EventArgs)
-        If CheckBox1perth.Checked And CheckBox2perth.Checked Then CheckBox1perth.Checked = False
+        If CheckBox1perth.Checked And CheckBox2perth.Checked Then CheckBox1perth.Checked = False 'Mutex
     End Sub
 
     Private Sub CheckBox1perth_CheckedChanged(sender As Object, e As EventArgs)
-        If CheckBox2perth.Checked And CheckBox1perth.Checked Then CheckBox2perth.Checked = False
+        If CheckBox2perth.Checked And CheckBox1perth.Checked Then CheckBox2perth.Checked = False 'Mutex
     End Sub
 
     Dim _disableaccesstoactiondevchange = False
@@ -1035,7 +1057,8 @@ finish_loading:
     End Sub
 
     Private Sub AboutToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles AboutToolStripMenuItem.Click
-        MsgBox("Regularized Linear Kramers Kronig" & vbCrLf & "Version: " & Application.ProductVersion & vbCrLf & "Author: Ahmed Yahia Kallel", MsgBoxStyle.Information, "About")
+        'MsgBox("Regularized Linear Kramers Kronig" & vbCrLf & "Version: " & Application.ProductVersion & vbCrLf & "Author: Ahmed Yahia Kallel", MsgBoxStyle.Information, "About")
+        about.Show()
     End Sub
 
 
@@ -1212,4 +1235,5 @@ finish_loading:
         PlotViewNyquist.InvalidatePlot(True)
         PlotViewDev.InvalidatePlot(True)
     End Sub
+
 End Class

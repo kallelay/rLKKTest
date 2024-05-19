@@ -24,6 +24,7 @@ Partial Class Form1
     Private Sub InitializeComponent()
         Dim DataGridViewCellStyle1 As DataGridViewCellStyle = New DataGridViewCellStyle()
         Dim DataGridViewCellStyle2 As DataGridViewCellStyle = New DataGridViewCellStyle()
+        Dim resources As ComponentModel.ComponentResourceManager = New ComponentModel.ComponentResourceManager(GetType(Form1))
         PlotViewNyquist = New PlotView()
         MenuStrip1 = New MenuStrip()
         ToolStripMenuItem1 = New ToolStripMenuItem()
@@ -110,7 +111,6 @@ Partial Class Form1
         ' 
         ' PlotViewNyquist
         ' 
-        PlotViewNyquist.AllowDrop = True
         PlotViewNyquist.BackColor = Color.White
         PlotViewNyquist.Dock = DockStyle.Fill
         PlotViewNyquist.Location = New Point(0, 0)
@@ -189,8 +189,9 @@ Partial Class Form1
         ' 
         ' AboutToolStripMenuItem
         ' 
+        AboutToolStripMenuItem.Image = My.Resources.Resources.kallelay
         AboutToolStripMenuItem.Name = "AboutToolStripMenuItem"
-        AboutToolStripMenuItem.Size = New Size(52, 20)
+        AboutToolStripMenuItem.Size = New Size(68, 20)
         AboutToolStripMenuItem.Text = "&About"
         ' 
         ' PlotViewBodeMag
@@ -779,9 +780,10 @@ Partial Class Form1
         Controls.Add(SplitContainer1)
         Controls.Add(Panel1)
         Controls.Add(MenuStrip1)
+        Icon = CType(resources.GetObject("$this.Icon"), Icon)
         MainMenuStrip = MenuStrip1
         Name = "Form1"
-        Text = "regularized Linear Kramers-Kronig Check 1.0"
+        Text = "regularized Linear Kramers-Kronig Test 1.0"
         MenuStrip1.ResumeLayout(False)
         MenuStrip1.PerformLayout()
         Panel1.ResumeLayout(False)

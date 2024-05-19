@@ -7,6 +7,26 @@
     <UseWindowsForms>true</UseWindowsForms>
     <MyType>WindowsForms</MyType>
     <ImportedNamespaces>OxyPlot=False,OxyPlot.WindowsForms=False,System.Data=False,System.Drawing=False,System.Windows.Forms=False,Microsoft.VisualBasic=True,System=True,System.Collections=True,System.Collections.Generic=True,System.Diagnostics=True,System.Linq=True,System.Xml.Linq=True,System.Threading.Tasks=True,rLKKTest=True</ImportedNamespaces>
+    <Title>regularized Linear Kramers Kronig Test</Title>
+    <Copyright>Ahmed Yahia Kallel, Measurement and Sensor Technology, TU Chemnitz</Copyright>
+    <Description>Regularized Linear Kramers Kronig (rLKK) is a data consistency checking tool that is used to analyze and validate spectroscopic data. It is based on the Kramers-Kronig relations, which are fundamental principles in physics that relate the real and imaginary parts of a complex-valued function.
+It can be used to check data consistency, and/or correct the impedance data.
+
+rLKK Test is a graphical interface to rLKK package, previously published for Python and MATLAB users. This software is a standalone and is made using VB.NET (I program for VB6/VB.NET since 2008 and it's most comfortable software for me). No programming knowledge is needed to get it started.
+To work with rLKK test, few steps are necessary
+
+Load the data file (CSV, TSV, MAT [containing f and Z], TXT).
+The script is made to automatically detect the delimiter and data. It supports Agilent A4294 file type and compatible files and almost every file with "frequency", "real", and "imaginary"
+Select the appropriate rLKK parameters
+For this, you need to adjust "lambda" and "fmin" and "fmax". These are called 'Distribution of Relaxation Times' parameters
+ALWAYS sure that "fmin" (DRT frequency) is smaller than the minimum measurement frequency, and that "fmax" (DRT frequency) is larger than the maximum measurement frequency.
+Lambda should be either "small" (in lenient mode: 1e-9 to 1e-1) or too "large" (in aggressive mode: 1e-3 to 1e15). larger = higher bias in the model and less trust from measurement data, recommending a large lambda in the case of noisy or highlight distorted measurement.
+The number of frequencies in DRT should be adequately chosen so at least there is 6 freq per each decade in DRT frequencies
+R_0 and R_inf: adds R_0 or R_inf to DRT equations. Typically R_0 is recommended.
+Check rLKK results tab to make that there is no huge oscillations in the results (1e20). It should be noted that "lenient" uses high rLKK "x" values while "aggressive" uses small rLKK values.
+
+</Description>
+    <PackageIcon>rlkktest_logo.png</PackageIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,6 +35,13 @@
     <Import Include="System.Data" />
     <Import Include="System.Drawing" />
     <Import Include="System.Windows.Forms" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\..\..\Downloads\rlkktest_logo.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
