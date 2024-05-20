@@ -85,6 +85,7 @@ You can zoom in Nyquist plot (Use a mouse with a wheel, use the wheel) to ensure
 
 ![alt text](img/image-17.png)
 
+**Recommended**: To avoid oscillation in "rLKK results" (x). Check video below
 
 **The lenient mode is recommended for measurement with small deviations that do not hinder the overall behavior of the system**
 
@@ -101,9 +102,26 @@ Aggressive rLKK follows the original rLKK algorithm. By using a large fmin and f
 
 **Agressive rLKK is recommended in the case of high noise or deviations, in this case, the number of DRT frequency pts should be adequately chosen to allow a just/good approximation**
 
+**Recommended**: To avoid oscillation in "rLKK results" (x). Check video below
+
 Note: You can automatically use the "red" button next to rLKK parameters to auto-fill with starting aggressive parameters
 
 ![alt text](img/image.png)
+
+### rLKK configuration Correct use: Avoid oscillations and non-null solutions limits
+
+It's important that the solution "rLKK results" doesn't exhibit non-constant (or non-null) values at the end of the region. For this, increasing the limits of fmin (decrease) and fmax (increase) can eliminate this problem:
+
+![alt text](img/image-26.png)
+
+
+In addition, the oscillations needs to be avoided as it means that there is overfitting. For this, lambda should increase and as long as the number of DRT npts is larger than than 6 freq/dec, it should decrease. Recommended is to adjust lambda first, then npts.
+
+![alt text](img/image-27.png)
+
+A small YouTube tutorial for this (click on the next image):
+[![YouTube Tutorial](http://img.youtube.com/vi/1DXEOGP76bk/0.jpg)](http://www.youtube.com/watch?v=1DXEOGP76bk "Regularized Linear Kramers Kronig Test (rLKK) Tutorial")
+
 
 ## Working with plots:
 Plots allows a fast visualization of the data. Nyquist plot, Bode plot, and deviations plots are connected. If you select a point in Nyquist or Bode plots, it'll also be selected in the other plot, as well as the row. 
