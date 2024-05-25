@@ -44,6 +44,53 @@ Public Class Form1
         Thread.CurrentThread.CurrentUICulture =
         New System.Globalization.CultureInfo("en-US")
 
+        If My.Application.CommandLineArgs.Count > 0 Then
+            For Each arg In My.Application.CommandLineArgs
+
+                Select Case LCase(arg).Split("=")(0)
+
+                    Case "-fmin"
+                        Try : fminTextBox.Text = Split(arg, "=")(1) : Catch ex As Exception : End Try
+
+                    Case "-fmax"
+                        Try : fmaxTextBox.Text = Split(arg, "=")(1) : Catch ex As Exception : End Try
+
+                    Case "-lambda"
+                        Try : lambdaTextBox.Text = Split(arg, "=")(1) : Catch ex As Exception : End Try
+
+                    Case "-npts"
+                        Try : nDRTTextBox.Text = Split(arg, "=")(1) : Catch ex As Exception : End Try
+
+                    Case "-r0"
+                        Try : CheckBoxR0.Checked = Split(arg, "=")(1) : Catch ex As Exception : End Try
+
+                    Case "-rinf"
+                        Try : CheckBoxRinf.Checked = Split(arg, "=")(1) : Catch ex As Exception : End Try
+
+                    Case "-help"
+                        MsgBox("rLKKText.exe ""filepath"" <arguments> 
+Arguments:
+-fmin=<val> -fmax=<val> -lambda=<val> -npts=<val> -r0=<0/1> -rinf=<0/1>
+-export
+-exit 
+")
+                        End
+
+                    Case "-exit"
+                        End
+
+
+
+
+                    Case "-export"
+                        ExportDataGridViewToTextFile(DataGridViewImpedance, Filepathtext.Text & "_export.txt")
+                    Case Else
+                        Filepathtext.Text = arg
+
+                End Select
+            Next
+        End If
+
 
         'initialize labels and combobox
         fileinfLabel.Text = ""

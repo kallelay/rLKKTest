@@ -259,7 +259,7 @@ Partial Class Form1
         DataGridViewImpedance.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
         DataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleLeft
         DataGridViewCellStyle2.BackColor = Color.Honeydew
-        DataGridViewCellStyle2.Font = New Font("Segoe UI", 9.0F, FontStyle.Regular, GraphicsUnit.Point)
+        DataGridViewCellStyle2.Font = New Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point)
         DataGridViewCellStyle2.ForeColor = SystemColors.WindowText
         DataGridViewCellStyle2.SelectionBackColor = SystemColors.Highlight
         DataGridViewCellStyle2.SelectionForeColor = SystemColors.HighlightText
@@ -350,7 +350,7 @@ Partial Class Form1
         Button4.AutoEllipsis = True
         Button4.BackColor = Color.SeaGreen
         Button4.FlatStyle = FlatStyle.Flat
-        Button4.Font = New Font("Script MT Bold", 6.0F, FontStyle.Bold, GraphicsUnit.Point)
+        Button4.Font = New Font("Script MT Bold", 6F, FontStyle.Bold, GraphicsUnit.Point)
         Button4.Location = New Point(102, 0)
         Button4.Name = "Button4"
         Button4.Size = New Size(10, 10)
@@ -443,7 +443,7 @@ Partial Class Form1
         Button3.AutoEllipsis = True
         Button3.BackColor = Color.Tomato
         Button3.FlatStyle = FlatStyle.Flat
-        Button3.Font = New Font("Script MT Bold", 6.0F, FontStyle.Bold, GraphicsUnit.Point)
+        Button3.Font = New Font("Script MT Bold", 6F, FontStyle.Bold, GraphicsUnit.Point)
         Button3.Location = New Point(118, 0)
         Button3.Name = "Button3"
         Button3.Size = New Size(10, 10)
@@ -805,7 +805,7 @@ Partial Class Form1
         ' Form1
         ' 
         AllowDrop = True
-        AutoScaleDimensions = New SizeF(7.0F, 15.0F)
+        AutoScaleDimensions = New SizeF(7F, 15F)
         AutoScaleMode = AutoScaleMode.Font
         BackColor = Color.AliceBlue
         ClientSize = New Size(1321, 466)
